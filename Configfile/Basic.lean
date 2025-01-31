@@ -26,6 +26,18 @@ def IniConfig.addSection (self: IniConfig) (name: String): IniConfig :=
     ]
   }
 
+/-- Add a key-value pair to a section in IniConfig. If the section doesn't exist, it will be created. -/
+def IniConfig.addValue (self : IniConfig) (section' key value : String) : IniConfig :=
+  let sections := self.sections.map fun s =>
+    if s.name == section' then
+      { s with values := s.values ++ [(key, value)] }
+    else
+      s
+  if sections.any (·.name == section') then
+    { self with sections := sections }
+  else
+    { sections := sections ++ [{ name := section', values := [(key, value)] }] }
+
 
 /-- Convert IniConfig to a string representation -/
 def IniConfig.toString (config : IniConfig) : String := Id.run do
@@ -40,6 +52,7 @@ def IniConfig.toString (config : IniConfig) : String := Id.run do
 /-- Write IniConfig to a file -/
 def IniConfig.writeFile (config : IniConfig) (filename : String) : IO Unit := do
   IO.FS.writeFile filename config.toString
+
 
 /-- Get all key-value pairs in a section -/
 def IniConfig.getSection? (config : IniConfig) (section' : String) : Option (List (String × String)) := do
@@ -149,8 +162,8 @@ def exampleProgram : IO Unit := do
 
   match parse sampleConfig with
   | .ok config => do
-    IO.println $ "Parsed config:"
-    IO.println $ config.toString
+    IO.println "Parsed config:"
+    IO.println config.toString
 
     -- Access values
     match config.getValue? "database" "host" with
@@ -158,3 +171,15 @@ def exampleProgram : IO Unit := do
     | none => IO.println "Host not found"
 
   | .error err => IO.println s!"Error parsing config: {err}"
+
+
+  let mut sc: IniConfig := Inhabited.default
+  sc := sc.addSection "basic"
+  sc := sc.addValue "basic" "team" "none"
+  sc := sc.addValue "basic" "chutney" "excessive"
+  sc := sc.addValue "advanced" "hogs" "34"
+
+  IO.println ""
+  IO.println "Other Parsed Config:"
+  IO.println sc.toString
+
