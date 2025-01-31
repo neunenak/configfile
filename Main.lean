@@ -26,7 +26,7 @@ def exampleProgram : IO Unit := do
   | .error err => IO.println s!"Error parsing config: {err}"
 
 
-  let mut sc: IniConfig := Inhabited.default
+  let mut sc: SectionedConfig := Inhabited.default
   sc := sc.addSection "basic"
   sc := sc.addValue "basic" "team" "none"
   sc := sc.addValue "basic" "chutney" "excessive"

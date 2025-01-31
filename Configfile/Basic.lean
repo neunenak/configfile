@@ -3,20 +3,20 @@
   A library for working with INI configuration files
 -/
 
-structure IniSection where
+structure SectionedConfig.Section where
   name : String
   values : List (String × String)
   deriving Repr, BEq
 
-structure IniConfig where
-  sections : List IniSection
+structure SectionedConfig where
+  sections : List SectionedConfig.Section
   deriving Repr, BEq
 
-instance : Inhabited IniConfig where
+instance : Inhabited SectionedConfig where
   default := { sections := [] }
 
 
-def IniConfig.addSection (self: IniConfig) (name: String): IniConfig :=
+def SectionedConfig.addSection (self: SectionedConfig) (name: String): SectionedConfig :=
   {
     sections := self.sections ++ [
       {
@@ -26,8 +26,8 @@ def IniConfig.addSection (self: IniConfig) (name: String): IniConfig :=
     ]
   }
 
-/-- Add a key-value pair to a section in IniConfig. If the section doesn't exist, it will be created. -/
-def IniConfig.addValue (self : IniConfig) (section' key value : String) : IniConfig :=
+/-- Add a key-value pair to a section in SectionedConfig. If the section doesn't exist, it will be created. -/
+def SectionedConfig.addValue (self : SectionedConfig) (section' key value : String) : SectionedConfig :=
   let sections := self.sections.map fun s =>
     if s.name == section' then
       { s with values := s.values ++ [(key, value)] }
@@ -39,8 +39,8 @@ def IniConfig.addValue (self : IniConfig) (section' key value : String) : IniCon
     { sections := sections ++ [{ name := section', values := [(key, value)] }] }
 
 
-/-- Convert IniConfig to a string representation -/
-def IniConfig.toString (config : IniConfig) : String := Id.run do
+/-- Convert SectionedConfig to a string representation -/
+def SectionedConfig.toString (config : SectionedConfig) : String := Id.run do
   let mut result := ""
   for section' in config.sections do
     result := result ++ s!"[{section'.name}]\n"
@@ -49,18 +49,18 @@ def IniConfig.toString (config : IniConfig) : String := Id.run do
     result := result ++ "\n"
   result
 
-/-- Write IniConfig to a file -/
-def IniConfig.writeFile (config : IniConfig) (filename : String) : IO Unit := do
+/-- Write SectionedConfig to a file -/
+def SectionedConfig.writeFile (config : SectionedConfig) (filename : String) : IO Unit := do
   IO.FS.writeFile filename config.toString
 
 
 /-- Get all key-value pairs in a section -/
-def IniConfig.getSection? (config : IniConfig) (section' : String) : Option (List (String × String)) := do
+def SectionedConfig.getSection? (config : SectionedConfig) (section' : String) : Option (List (String × String)) := do
   let section' ← config.sections.find? (·.name == section')
   some section'.values
 
 /-- Get a value from a specific section -/
-def IniConfig.getValue? (config : IniConfig) (section' : String) (key : String) : Option String := do
+def SectionedConfig.getValue? (config : SectionedConfig) (section' : String) (key : String) : Option String := do
   let section' ← config.sections.find? (·.name == section')
   let (_, value) ← section'.values.find? (·.1 == key)
   some value
@@ -108,11 +108,11 @@ def parseKeyValue? (line : String) : Option (String × String) := do
   guard $ key != ""
   some (key, value)
 
-/-- Parse an INI file content into an IniConfig -/
-partial def parse (content : String) : Except ParseError IniConfig := do
+/-- Parse an INI file content into an SectionedConfig -/
+partial def parse (content : String) : Except ParseError SectionedConfig := do
   let lines := content.splitOn "\n"
   let mut currentSection : Option String := none
-  let mut sections : List IniSection := []
+  let mut sections : List SectionedConfig.Section := []
   let mut currentValues : List (String × String) := []
 
   for (lineNum, line) in lines.enum do
@@ -137,9 +137,9 @@ partial def parse (content : String) : Except ParseError IniConfig := do
   if let some secName := currentSection then
     sections := sections ++ [{ name := secName, values := currentValues }]
 
-  Except.ok ({ sections := sections }: IniConfig)
+  Except.ok ({ sections := sections }: SectionedConfig)
 
 /-- Read and parse an INI file -/
-def readFile (filename : String) : IO (Except ParseError IniConfig) := do
+def readFile (filename : String) : IO (Except ParseError SectionedConfig) := do
   let content ← IO.FS.readFile filename
   return parse content
