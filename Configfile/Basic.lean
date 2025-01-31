@@ -12,6 +12,21 @@ structure IniConfig where
   sections : List IniSection
   deriving Repr, BEq
 
+instance : Inhabited IniConfig where
+  default := { sections := [] }
+
+
+def IniConfig.addSection (self: IniConfig) (name: String): IniConfig :=
+  {
+    sections := self.sections ++ [
+      {
+        name := name,
+        values := []
+      }
+    ]
+  }
+
+
 /-- Convert IniConfig to a string representation -/
 def IniConfig.toString (config : IniConfig) : String := Id.run do
   let mut result := ""
