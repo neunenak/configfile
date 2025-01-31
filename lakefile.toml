@@ -1,0 +1,10 @@
+name = "configfile"
+version = "0.1.0"
+defaultTargets = ["configfile"]
+
+[[lean_lib]]
+name = "Configfile"
+
+[[lean_exe]]
+name = "configfile"
+root = "Main"
