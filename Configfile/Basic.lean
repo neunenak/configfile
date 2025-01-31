@@ -22,7 +22,20 @@ def IniConfig.toString (config : IniConfig) : String := Id.run do
     result := result ++ "\n"
   result
 
-namespace IniConfiguration
+/-- Write IniConfig to a file -/
+def IniConfig.writeFile (config : IniConfig) (filename : String) : IO Unit := do
+  IO.FS.writeFile filename config.toString
+
+/-- Get all key-value pairs in a section -/
+def IniConfig.getSection? (config : IniConfig) (section' : String) : Option (List (String × String)) := do
+  let section' ← config.sections.find? (·.name == section')
+  some section'.values
+
+/-- Get a value from a specific section -/
+def IniConfig.getValue? (config : IniConfig) (section' : String) (key : String) : Option String := do
+  let section' ← config.sections.find? (·.name == section')
+  let (_, value) ← section'.values.find? (·.1 == key)
+  some value
 
 /-- Represents errors that can occur during INI parsing -/
 inductive ParseError
@@ -41,13 +54,13 @@ instance : ToString ParseError where
   toString := ParseError.toString
 
 /-- Trim whitespace and comments from a line -/
-def cleanLine (line : String) : String :=
+private def cleanLine (line : String) : String :=
   let noComment := (line.splitOn "#").head!
   let noComment := (noComment.splitOn ";").head!
   noComment.trim
 
 /-- Check if a line is empty or only contains whitespace/comments -/
-def isEmptyLine (line : String) : Bool :=
+private def isEmptyLine (line : String) : Bool :=
   cleanLine line == ""
 
 /-- Parse a section header line "[section]" -/
@@ -98,31 +111,16 @@ partial def parse (content : String) : Except ParseError IniConfig := do
 
   Except.ok ({ sections := sections }: IniConfig)
 
-/-- Get a value from a specific section -/
-def getValue? (config : IniConfig) (section' : String) (key : String) : Option String := do
-  let section' ← config.sections.find? (·.name == section')
-  let (_, value) ← section'.values.find? (·.1 == key)
-  some value
 
-/-- Get all key-value pairs in a section -/
-def getSection? (config : IniConfig) (section' : String) : Option (List (String × String)) := do
-  let section' ← config.sections.find? (·.name == section')
-  some section'.values
-
-
-/-- Write IniConfig to a file -/
-def writeFile (config : IniConfig) (filename : String) : IO Unit := do
-  IO.FS.writeFile filename config.toString
 
 /-- Read and parse an INI file -/
 def readFile (filename : String) : IO (Except ParseError IniConfig) := do
   let content ← IO.FS.readFile filename
   return parse content
 
-end IniConfiguration
 
 /-- Example usage -/
-def exampleProgram : IO Unit := open IniConfiguration in do
+def exampleProgram : IO Unit := do
   let sampleConfig := "
     [database]
     host = localhost
@@ -140,7 +138,7 @@ def exampleProgram : IO Unit := open IniConfiguration in do
     IO.println $ config.toString
 
     -- Access values
-    match (getValue? config) "database" "host" with
+    match config.getValue? "database" "host" with
     | some host => IO.println s!"Database host: {host}"
     | none => IO.println "Host not found"
 
