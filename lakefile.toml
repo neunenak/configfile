@@ -1,10 +1,10 @@
-name = "configfile"
+name = "SectionedConfig"
 version = "0.1.0"
-defaultTargets = ["configfile"]
+defaultTargets = ["sectionedconfig"]
 
 [[lean_lib]]
-name = "Configfile"
+name = "SectionedConfig"
 
 [[lean_exe]]
-name = "configfile"
+name = "sectionedconfig"
 root = "Main"

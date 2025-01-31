@@ -3,4 +3,4 @@ _default:
 
 # Run the example output
 run-example:
-    lake exec configfile
+    lake exec sectionedconfig
