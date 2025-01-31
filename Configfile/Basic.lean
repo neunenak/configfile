@@ -139,47 +139,7 @@ partial def parse (content : String) : Except ParseError IniConfig := do
 
   Except.ok ({ sections := sections }: IniConfig)
 
-
-
 /-- Read and parse an INI file -/
 def readFile (filename : String) : IO (Except ParseError IniConfig) := do
   let content ← IO.FS.readFile filename
   return parse content
-
-
-/-- Example usage -/
-def exampleProgram : IO Unit := do
-  let sampleConfig := "
-    [database]
-    host = localhost
-    port = 5432
-    user = admin
-
-    [server]
-    port = 8080
-    debug = true
-    "
-
-  match parse sampleConfig with
-  | .ok config => do
-    IO.println "Parsed config:"
-    IO.println config.toString
-
-    -- Access values
-    match config.getValue? "database" "host" with
-    | some host => IO.println s!"Database host: {host}"
-    | none => IO.println "Host not found"
-
-  | .error err => IO.println s!"Error parsing config: {err}"
-
-
-  let mut sc: IniConfig := Inhabited.default
-  sc := sc.addSection "basic"
-  sc := sc.addValue "basic" "team" "none"
-  sc := sc.addValue "basic" "chutney" "excessive"
-  sc := sc.addValue "advanced" "hogs" "34"
-
-  IO.println ""
-  IO.println "Other Parsed Config:"
-  IO.println sc.toString
-
